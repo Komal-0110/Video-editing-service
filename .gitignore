@@ -1,0 +1,11 @@
+# Node modules
+node_modules/
+
+# Prisma files
+prisma/migrations/
+
+# Environment variables
+.env
+
+# AWS credentials (if accidentally created)
+.aws/

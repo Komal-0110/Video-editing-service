@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Video {
+  id               String   @id @default(uuid())
+  name             String
+  originalPath     String   
+  finalPath        String?
+  duration         Int?
+  size             Int?
+  status           VideoStatus @default(PENDING)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  trimmedStartTime Int?
+  trimmedEndTime   Int?
+  subtitles        Json?
+}
+
+enum VideoStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
