@@ -1,4 +1,4 @@
-const { createVideo } = require("../service/videoService");
+const { createVideo, cutVideo } = require("../service/videoService");
 const { validate: isValidUUID } = require("uuid");
 
 async function uploadVideo(req, res) {
@@ -28,21 +28,32 @@ const trimRequest = joi.object({
 });
 
 async function trimVideo(req, res) {
-  const videoId = req.params.id;
-  if (!isValidUUID(videoId)) {
-    res.status(400).json({ error: "Invalid video id" });
-  }
+  try {
+    const videoId = req.params.id;
+    if (!isValidUUID(videoId)) {
+      res.status(400).json({ error: "Invalid video id" });
+    }
 
-  const { error, value } = trimRequest.validate(req.body);
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
-  }
+    const { error, value } = trimRequest.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
 
-  const { startTime, endTime } = value;
-  if (!startTime || !endTime) {
-    return res
-      .status(400)
-      .json({ error: "expect start time(00:00:00) and end time(00:00:00)" });
+    const { startTime, endTime } = value;
+    if (!startTime || !endTime) {
+      return res
+        .status(400)
+        .json({ error: "expect start time(00:00:00) and end time(00:00:00)" });
+    }
+
+    const trimmedVideo = await cutVideo(videoId, startTime, endTime);
+
+    res.status(200).json({
+      message: "Video trimmed succesfully",
+      data: trimmedVideo,
+    });
+  } catch (e) {
+    console.error("Trim video error", e);
   }
 }
 
