@@ -1,4 +1,5 @@
-const {createVideo} = require("../service/videoService") 
+const { createVideo } = require("../service/videoService");
+const { validate: isValidUUID } = require("uuid");
 
 async function uploadVideo(req, res) {
   try {
@@ -8,11 +9,41 @@ async function uploadVideo(req, res) {
     }
 
     const video = await createVideo(file);
-    res.status(201).json(video);
+    res.status(201).json({ message: `Video uploaded successfully ${video}` });
   } catch (error) {
     console.error("Upload Video Error:", error);
     res.status(500).json({ error: "Failed to upload video" });
   }
 }
 
-module.exports = { uploadVideo };
+const trimRequest = joi.object({
+  startTime: joi
+    .string()
+    .pattern(/^\d{2}:\d{2}:\d{2}$/)
+    .required(),
+  endTime: joi
+    .string()
+    .pattern(/^\d{2}:\d{2}:\d{2}$/)
+    .required(),
+});
+
+async function trimVideo(req, res) {
+  const videoId = req.params.id;
+  if (!isValidUUID(videoId)) {
+    res.status(400).json({ error: "Invalid video id" });
+  }
+
+  const { error, value } = trimRequest.validate(req.body);
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
+
+  const { startTime, endTime } = value;
+  if (!startTime || !endTime) {
+    return res
+      .status(400)
+      .json({ error: "expect start time(00:00:00) and end time(00:00:00)" });
+  }
+}
+
+module.exports = { uploadVideo, trimVideo };
