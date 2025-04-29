@@ -1,4 +1,4 @@
-const {downloadFromS3} = require("../utils/s3");
+const {downloadFromS3, uploadFileToS3} = require("../utils/s3");
 const ffmpeg = require("fluent-ffmpeg");
 const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
 
@@ -8,13 +8,16 @@ const prisma = new PrismaClient();
 
 const createVideo = async (file) => {
   const s3Result = await uploadFileToS3(file);
+  console.log({s3Result});
+  
 
   const video = await prisma.video.create({
     data: {
       name: file.originalname,
-      originalPath: s3Result.Location,
+      originalPath: s3Result,
       size: file.size,
-      status: "UPLOADED",
+      status: "COMPLETED",
+      createdAt: Date.now
     },
   });
 

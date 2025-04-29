@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { pipeline } = require('stream');
 const util = require('util');
+require('dotenv').config();
 
 const pump = util.promisify(pipeline);
 
@@ -14,17 +15,19 @@ const s3 = new S3Client({
   },
 });
 
-const BUCKET_NAME = process.env.S3_BUCKET_NAME;
+const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
 
-const uploadFileToS3 = async (filePath) => {
-  const fileContent = fs.readFileSync(filePath);
-  const fileName = path.basename(filePath);
+const uploadFileToS3 = async (file) => {
+  console.log({ file, BUCKET_NAME});
+  const fileName = path.basename(file.originalname)
+  console.log({fileName});
+  
 
   const uploadParams = {
     Bucket: BUCKET_NAME,
     Key: `uploads/${Date.now()}_${fileName}`,
-    Body: fileContent,
-    ContentType: 'video/mp4',
+    Body: file.buffer,
+    ContentType: file.mimetype,
   };
 
   await s3.send(new PutObjectCommand(uploadParams));

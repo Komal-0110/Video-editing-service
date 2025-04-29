@@ -3,8 +3,11 @@ const upload = require("../middleware/multer");
 const { uploadVideo, trimVideo } = require("../controllers/video.controllers");
 
 function videoRoute(){
-    Router.post('/upload', upload.single('video'), uploadVideo);
-    Router.post("/:id/trim", trimVideo)
+    const router = Router()
+    router.post('/upload', upload.single('video'), uploadVideo);
+    router.post("/:id/trim", trimVideo)
+
+    return router
 }
 
 

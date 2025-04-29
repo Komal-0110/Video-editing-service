@@ -1,3 +1,4 @@
+const Joi = require("joi");
 const { createVideo, cutVideo } = require("../service/videoService");
 const { validate: isValidUUID } = require("uuid");
 
@@ -16,12 +17,12 @@ async function uploadVideo(req, res) {
   }
 }
 
-const trimRequest = joi.object({
-  startTime: joi
+const trimRequest = Joi.object({
+  startTime: Joi
     .string()
     .pattern(/^\d{2}:\d{2}:\d{2}$/)
     .required(),
-  endTime: joi
+  endTime: Joi
     .string()
     .pattern(/^\d{2}:\d{2}:\d{2}$/)
     .required(),
