@@ -9,3 +9,9 @@ prisma/migrations/
 
 # AWS credentials (if accidentally created)
 .aws/
+
+uploads/
+
+tmp/
+
+subtitles/
