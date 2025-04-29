@@ -17,14 +17,29 @@ const s3 = new S3Client({
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
 
-const uploadFileToS3 = async (file) => {
-  const fileName = path.basename(file.originalname)
+const uploadFileToS3 = async (file) => {  
+  if (!file) {
+    throw new Error('uploadFileToS3: filePath must be a valid string');
+  }
+
+  let fileName, fileStream, contentType;
+  if (file.buffer && file.originalname && file.mimetype) {
+    fileName = `${Date.now()}_${file.originalname}`;
+    fileStream = file.path;
+    contentType = file.mimetype;
+  } else if (typeof file === 'string') {
+    fileName = `${Date.now()}_${path.basename(file)}`;
+    fileStream = fs.createReadStream(file);
+    contentType = 'video/mp4';
+  } else {
+    throw new Error('uploadFileToS3: Invalid file format');
+  }
 
   const uploadParams = {
     Bucket: BUCKET_NAME,
     Key: `uploads/${Date.now()}_${fileName}`,
-    Body: file.buffer,
-    ContentType: file.mimetype,
+    Body: fileStream,
+    ContentType: contentType,
   };
 
   await s3.send(new PutObjectCommand(uploadParams));

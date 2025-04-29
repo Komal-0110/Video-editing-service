@@ -10,7 +10,7 @@ async function uploadVideo(req, res) {
     }
 
     const video = await createVideo(file);
-    res.status(201).json({ message: `Video uploaded successfully ${video}` });
+    res.status(201).json({ message: `Video uploaded successfully ${video.originalPath}` });
   } catch (error) {
     console.error("Upload Video Error:", error);
     res.status(500).json({ error: "Failed to upload video" });
