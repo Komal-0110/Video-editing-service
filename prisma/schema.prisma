@@ -18,6 +18,7 @@ model Video {
   status           VideoStatus @default(PENDING)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  editedPath       String?
 
   trimmedStartTime Int?
   trimmedEndTime   Int?
