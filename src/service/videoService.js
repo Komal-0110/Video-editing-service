@@ -8,9 +8,7 @@ const prisma = new PrismaClient();
 
 const createVideo = async (file) => {
   const s3Result = await uploadFileToS3(file);
-  console.log({s3Result});
   
-
   const video = await prisma.video.create({
     data: {
       name: file.originalname,
