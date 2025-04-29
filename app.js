@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-app.use('/api/videos', videoRoute);
+app.use('/api/videos', videoRoute());
 
 // remove
 app.get('/api/health', (req, res) => {
