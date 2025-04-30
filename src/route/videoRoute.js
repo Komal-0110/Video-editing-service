@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const upload = require("../middleware/multer");
-const { uploadVideo, trimVideo, addSubtitles, renderVideo, downloadFinalVideo } = require("../controllers/video.controllers");
+const { uploadVideo, trimVideo, addSubtitles, renderVideo, downloadFinalVideo } = require("../controllers/VideoController");
 
 function videoRoute(){
     const router = Router()

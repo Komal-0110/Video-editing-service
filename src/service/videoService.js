@@ -1,4 +1,8 @@
-const { downloadFromS3, uploadFileToS3, getS3FileStream } = require("../utils/s3");
+const {
+  downloadFromS3,
+  uploadFileToS3,
+  getS3FileStream,
+} = require("../utils/s3");
 const ffmpeg = require("fluent-ffmpeg");
 const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
 const path = require("path");
@@ -177,7 +181,7 @@ const renderFinalVideo = async (id) => {
 
   const inputPath = video.editedPath || video.originalPath;
 
-  const TMP_DIR = path.join(__dirname, "..", "tmp", "final");
+  const TMP_DIR = path.join(__dirname, "tmp", "final");
   if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
 
   const outputPath = path.join(TMP_DIR, "final_video.mp4");
@@ -196,8 +200,12 @@ const renderFinalVideo = async (id) => {
         });
 
         resolve(s3Url);
+        fs.unlinkSync(outputPath);
       })
-      .on("error", reject)
+      .on("error", async () => {
+        reject();
+        fs.unlinkSync(outputPath);
+      })
       .save(outputPath);
   });
 };
@@ -208,46 +216,13 @@ const getRenderedVideoStream = async (videoId) => {
   });
   if (!video || !video.finalPath) throw new Error("Video not found");
 
-  return getS3FileStream(video.finalPath)
-}
-
-const getVideoById = async (id) => {
-  return await prisma.video.findUnique({
-    where: { id },
-  });
-};
-
-const updateVideo = async (id, updateData) => {
-  return await prisma.video.update({
-    where: { id },
-    data: updateData,
-  });
-};
-
-const listVideos = async (skip = 0, take = 10) => {
-  return await prisma.video.findMany({
-    skip,
-    take,
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-};
-
-const deleteVideo = async (id) => {
-  return await prisma.video.delete({
-    where: { id },
-  });
+  return getS3FileStream(video.finalPath);
 };
 
 module.exports = {
   createVideo,
-  getVideoById,
-  updateVideo,
-  deleteVideo,
-  listVideos,
   cutVideo,
   addSubtitlesToVideo,
   renderFinalVideo,
-  getRenderedVideoStream
+  getRenderedVideoStream,
 };

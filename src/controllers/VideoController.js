@@ -1,6 +1,6 @@
 const Joi = require("joi");
-const { createVideo, cutVideo, addSubtitlesToVideo, renderFinalVideo, getRenderedVideoStream } = require("../service/videoService");
 const { validate: isValidUUID } = require("uuid");
+const { createVideo, addSubtitlesToVideo, cutVideo, getRenderedVideoStream, renderFinalVideo } = require("../service/videoService");
 
 async function uploadVideo(req, res) {
   try {
