@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const upload = require("../middleware/multer");
-const { uploadVideo, trimVideo, addSubtitles, renderVideo } = require("../controllers/video.controllers");
+const { uploadVideo, trimVideo, addSubtitles, renderVideo, downloadFinalVideo } = require("../controllers/video.controllers");
 
 function videoRoute(){
     const router = Router()
@@ -8,6 +8,7 @@ function videoRoute(){
     router.post("/:id/trim", trimVideo)
     router.put("/:id/subtitle", addSubtitles)
     router.post("/:id/render", renderVideo)
+    router.post('/:id/download', downloadFinalVideo)
 
     return router
 }

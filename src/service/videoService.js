@@ -1,4 +1,4 @@
-const { downloadFromS3, uploadFileToS3 } = require("../utils/s3");
+const { downloadFromS3, uploadFileToS3, getS3FileStream } = require("../utils/s3");
 const ffmpeg = require("fluent-ffmpeg");
 const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
 const path = require("path");
@@ -202,6 +202,15 @@ const renderFinalVideo = async (id) => {
   });
 };
 
+const getRenderedVideoStream = async (videoId) => {
+  const video = await prisma.video.findUnique({
+    where: { id: videoId },
+  });
+  if (!video || !video.finalPath) throw new Error("Video not found");
+
+  return getS3FileStream(video.finalPath)
+}
+
 const getVideoById = async (id) => {
   return await prisma.video.findUnique({
     where: { id },
@@ -240,4 +249,5 @@ module.exports = {
   cutVideo,
   addSubtitlesToVideo,
   renderFinalVideo,
+  getRenderedVideoStream
 };

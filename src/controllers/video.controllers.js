@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { createVideo, cutVideo, addSubtitlesToVideo, renderFinalVideo } = require("../service/videoService");
+const { createVideo, cutVideo, addSubtitlesToVideo, renderFinalVideo, getRenderedVideoStream } = require("../service/videoService");
 const { validate: isValidUUID } = require("uuid");
 
 async function uploadVideo(req, res) {
@@ -98,5 +98,21 @@ const renderVideo = async (req, res) => {
   }
 };
 
+const downloadFinalVideo = async (req, res) => {
+  try {
+    const videoId = req.params.id;
+    if (!videoId) {
+      res.status(400).json({error : "video id not found"})
+    }
 
-module.exports = { uploadVideo, trimVideo, addSubtitles, renderVideo };
+    const stream = await getRenderedVideoStream(videoId)
+    res.setHeader('Content-Disposition', `attachment; filename=video-${videoId}.mp4`);
+    res.setHeader('Content-Type', 'video/mp4');
+    stream.pipe(res);
+  } catch (err) {
+    res.status(404).json({ error: err.message });
+  }
+}
+
+
+module.exports = { uploadVideo, trimVideo, addSubtitles, renderVideo, downloadFinalVideo };
