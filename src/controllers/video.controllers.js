@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { createVideo, cutVideo } = require("../service/videoService");
+const { createVideo, cutVideo, addSubtitlesToVideo } = require("../service/videoService");
 const { validate: isValidUUID } = require("uuid");
 
 async function uploadVideo(req, res) {
@@ -58,4 +58,34 @@ async function trimVideo(req, res) {
   }
 }
 
-module.exports = { uploadVideo, trimVideo };
+const subtitlesRequest = Joi.object({
+  startTime: Joi
+    .string()
+    .pattern(/^\d{2}:\d{2}:\d{2}$/)
+    .required(),
+  endTime: Joi
+    .string()
+    .pattern(/^\d{2}:\d{2}:\d{2}$/)
+    .required(),
+  subtitles: Joi.string().min(1).required(),
+});
+
+const addSubtitles = async (req, res) => {
+  try {
+    const videoId = req.params.id;
+    const { error, value } = subtitlesRequest.validate(req.body);
+
+    if (error) {
+      return res.status(400).send({ message: error.details[0].message });
+    }
+
+    const updatedPath = await addSubtitlesToVideo(videoId, value);
+    res.json({ editedPath: updatedPath });
+  } catch (err) {
+    console.error("Add Subtitles Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+module.exports = { uploadVideo, trimVideo, addSubtitles };

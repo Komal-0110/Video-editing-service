@@ -1,8 +1,8 @@
 const { downloadFromS3, uploadFileToS3 } = require("../utils/s3");
 const ffmpeg = require("fluent-ffmpeg");
 const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
-const path = require("path")
-const fs = require('fs');
+const path = require("path");
+const fs = require("fs");
 
 const { PrismaClient } = require("@prisma/client");
 
@@ -46,13 +46,16 @@ const cutVideo = async (id, startTime, endTime) => {
   if (!video) {
     throw new Error("video not found");
   }
-  
-  const TMP_DIR = path.join(__dirname, 'tmp');
+
+  const TMP_DIR = path.join(__dirname, "tmp");
   if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR);
 
-  const inputBaseName = path.basename(video.originalPath);  
+  const inputBaseName = path.basename(video.originalPath);
   const localInputPath = path.join(TMP_DIR, `${Date.now()}_${inputBaseName}`);
-  const localOutputPath = path.join(TMP_DIR, `trimmed_${Date.now()}_${inputBaseName}`);
+  const localOutputPath = path.join(
+    TMP_DIR,
+    `trimmed_${Date.now()}_${inputBaseName}`
+  );
 
   await downloadFromS3(video.originalPath, localInputPath);
 
@@ -76,12 +79,12 @@ const cutVideo = async (id, startTime, endTime) => {
   });
 
   const trimmedS3 = await uploadFileToS3(localOutputPath);
-  
+
   const updatedVideo = await prisma.video.update({
     where: { id },
     data: {
       editedPath: trimmedS3,
-      status: 'COMPLETED',
+      status: "COMPLETED",
     },
   });
 
@@ -89,6 +92,82 @@ const cutVideo = async (id, startTime, endTime) => {
   fs.unlinkSync(localOutputPath);
 
   return updatedVideo.editedPath;
+};
+
+const formatSrtTime = (time) => {
+  return time.includes(",") ? time : `${time},000`;
+};
+
+const addSubtitlesToVideo = async (id, value) => {
+  const { startTime, endTime, subtitles } = value;
+
+  if (!startTime || !endTime || !subtitles) {
+    throw new Error("invalid request");
+  }
+
+  const video = await prisma.video.findUnique({
+    where: { id: id },
+  });
+  if (!video) throw new Error("Video not found");
+
+  const TMP_DIR = path.join(__dirname, "tmp");
+  if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR);
+
+  const videoUpdatedPath = video.editedPath
+    ? video.editedPath
+    : video.originalPath;
+  const inputBaseName = path.basename(videoUpdatedPath);
+  const localInputPath = path.join(TMP_DIR, `${Date.now()}_${inputBaseName}`);
+  const localOutputPath = path.join(
+    TMP_DIR,
+    `subtitled_${Date.now()}_${inputBaseName}`
+  );
+  const localSubtitlePath = path.join(TMP_DIR, `subtitle_${Date.now()}.srt`);
+  const srtContent = `1\n${formatSrtTime(startTime)} --> ${formatSrtTime(
+    endTime
+  )}\n${subtitles}\n\n`;
+
+  fs.writeFileSync(localSubtitlePath, srtContent, { encoding: "utf-8" });
+  const ffmpegSafePath = localSubtitlePath.replace(/\\/g, "/");
+  const quotedPath = `'${ffmpegSafePath.replace(/:/g, "\\:")}'`;
+
+  await downloadFromS3(videoUpdatedPath, localInputPath);
+
+  ffmpeg.setFfmpegPath(ffmpegPath);
+  await new Promise((resolve, reject) => {
+    ffmpeg(localInputPath)
+      .videoFilter(
+        `subtitles=${quotedPath}:force_style='FontName=Arial,FontSize=36,PrimaryColour=&HFFFFFF&'`
+      )
+      .outputOptions([
+        "-c:v",
+        "libx264",
+        "-c:a",
+        "copy",
+        "-map",
+        "0:v",
+        "-map",
+        "0:a?",
+      ])
+      .output(localOutputPath)
+      .on("start", (cmd) => console.log("FFmpeg:", cmd))
+      .on("end", resolve)
+      .on("error", reject)
+      .run();
+  });
+
+  const subtitledVideoUrl = await uploadFileToS3(localOutputPath);
+
+  const updated = await prisma.video.update({
+    where: { id: id },
+    data: { editedPath: subtitledVideoUrl, status: "COMPLETED" },
+  });
+
+  fs.unlinkSync(localInputPath);
+  fs.unlinkSync(localOutputPath);
+  fs.unlinkSync(localSubtitlePath);
+
+  return updated.editedPath;
 };
 
 const getVideoById = async (id) => {
@@ -127,4 +206,5 @@ module.exports = {
   deleteVideo,
   listVideos,
   cutVideo,
+  addSubtitlesToVideo,
 };
