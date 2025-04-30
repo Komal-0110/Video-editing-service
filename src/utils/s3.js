@@ -34,9 +34,16 @@ const uploadFileToS3 = async (file) => {
   } else if (typeof file === "string") {
     fileName = `${Date.now()}_${path.basename(file)}`;
     fileStream = fs.createReadStream(file);
-    contentType = "video/mp4";
+    contentType = mime.lookup(fileName) || 'application/octet-stream';
   } else {
     throw new Error("uploadFileToS3: Invalid file format");
+  }
+
+  const allowedExtensions = ['.mp4', '.mov'];
+  const ext = path.extname(fileName).toLowerCase();
+
+  if (!allowedExtensions.includes(ext)) {
+    throw new Error(`uploadFileToS3: Only .mp4 and .mov files are allowed`);
   }
 
   const uploadParams = {

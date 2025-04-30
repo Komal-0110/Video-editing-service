@@ -8,7 +8,7 @@ function videoRoute(){
     router.post("/:id/trim", trimVideo)
     router.put("/:id/subtitle", addSubtitles)
     router.post("/:id/render", renderVideo)
-    router.post('/:id/download', downloadFinalVideo)
+    router.get('/:id/download', downloadFinalVideo)
 
     return router
 }
