@@ -113,10 +113,9 @@ const addSubtitlesToVideo = async (id, value) => {
   const TMP_DIR = path.join(__dirname, "tmp");
   if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR);
 
-  const videoUpdatedPath = video.editedPath
-    ? video.editedPath
-    : video.originalPath;
+  const videoUpdatedPath = video.editedPath || video.originalPath;
   const inputBaseName = path.basename(videoUpdatedPath);
+
   const localInputPath = path.join(TMP_DIR, `${Date.now()}_${inputBaseName}`);
   const localOutputPath = path.join(
     TMP_DIR,
@@ -170,47 +169,38 @@ const addSubtitlesToVideo = async (id, value) => {
   return updated.editedPath;
 };
 
-const renderFinalVideo = async(videoId) => {
+const renderFinalVideo = async (id) => {
   const video = await prisma.video.findUnique({
-    where: { id: videoId },
+    where: { id: id },
   });
+  if (!video) throw new Error("Video not found");
 
-  if (!video) throw new Error('Video not found');
+  const inputPath = video.editedPath || video.originalPath;
 
-  const videoUpdatedPath = video.editedPath
-    ? video.editedPath
-    : video.originalPath;
+  const TMP_DIR = path.join(__dirname, "..", "tmp", "final");
+  if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
 
-  const TMP_DIR = path.join(__dirname, "tmp", "final");
-  if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR);
+  const outputPath = path.join(TMP_DIR, "final_video.mp4");
 
-  const inputBaseName = path.basename(videoUpdatedPath);
-const newInputName = 'final_video.mp4'
-  fs.rename(inputBaseName, newInputName, (err) => {
-    if (err) {
-      throw new Error("internal server error")
-    } 
-  });
-  const outputPath = path.join(TMP_DIR, `${newInputName}`)
-
+  ffmpeg.setFfmpegPath(ffmpegPath);
   return new Promise((resolve, reject) => {
-    ffmpeg(videoUpdatedPath)
-      .outputOptions('-preset fast')
-      .on('end', async () => {
-        const s3Key = newInputName
-        const s3Url = await uploadToS3(outputPath, s3Key);
+    ffmpeg(inputPath)
+      .outputOptions("-preset fast")
+      .on("end", async () => {
+        const s3Key = `videos/${id}/final_video.mp4`;
+        const s3Url = await uploadFileToS3(outputPath, s3Key);
 
-        await video.update({
-          finalPath: s3Url,
-          status: 'COMPLETED',
+        await prisma.video.update({
+          where: { id },
+          data: { finalPath: s3Url, status: "COMPLETED" },
         });
 
         resolve(s3Url);
       })
-      .on('error', reject)
+      .on("error", reject)
       .save(outputPath);
   });
-}
+};
 
 const getVideoById = async (id) => {
   return await prisma.video.findUnique({
@@ -249,5 +239,5 @@ module.exports = {
   listVideos,
   cutVideo,
   addSubtitlesToVideo,
-  renderFinalVideo
+  renderFinalVideo,
 };

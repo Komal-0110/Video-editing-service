@@ -90,6 +90,7 @@ const addSubtitles = async (req, res) => {
 const renderVideo = async (req, res) => {
   try {
     const videoId = req.params.id;
+
     const url = await renderFinalVideo(videoId);
     res.status(200).json({ message: 'Rendered successfully', url });
   } catch (err) {
