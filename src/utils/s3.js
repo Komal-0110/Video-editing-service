@@ -21,34 +21,68 @@ const s3 = new S3Client({
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
 
+// const uploadFileToS3 = async (file) => {
+//   if (!file) {
+//     throw new Error("uploadFileToS3: filePath must be a valid string");
+//   }
+
+//   let fileName, fileStream, contentType;
+//   if (file.buffer && file.originalname && file.mimetype) {
+//     fileName = `${Date.now()}_${file.originalname}`;
+//     fileStream = file.path;
+//     contentType = file.mimetype;
+//   } else if (typeof file === "string") {
+//     fileName = `${Date.now()}_${path.basename(file)}`;
+//     fileStream = fs.createReadStream(file);
+//     contentType = mime.lookup(fileName) || 'application/octet-stream';
+//   } else {
+//     throw new Error("uploadFileToS3: Invalid file format");
+//   }
+
+//   const allowedExtensions = ['.mp4', '.mov'];
+//   const ext = path.extname(fileName).toLowerCase();
+
+//   if (!allowedExtensions.includes(ext)) {
+//     throw new Error(`uploadFileToS3: Only .mp4 and .mov files are allowed`);
+//   }
+
+//   const uploadParams = {
+//     Bucket: BUCKET_NAME,
+//     Key: `uploads/${Date.now()}_${fileName}`,
+//     Body: fileStream,
+//     ContentType: contentType,
+//   };
+
+//   await s3.send(new PutObjectCommand(uploadParams));
+
+//   const fileUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${uploadParams.Key}`;
+
+//   return fileUrl;
+// };
+
 const uploadFileToS3 = async (file) => {
   if (!file) {
-    throw new Error("uploadFileToS3: filePath must be a valid string");
+    throw new Error('uploadFileToS3: file must not be null or undefined');
   }
 
   let fileName, fileStream, contentType;
+
   if (file.buffer && file.originalname && file.mimetype) {
     fileName = `${Date.now()}_${file.originalname}`;
-    fileStream = file.path;
+    fileStream = file.buffer;
     contentType = file.mimetype;
-  } else if (typeof file === "string") {
+  }
+  else if (typeof file === 'string') {
     fileName = `${Date.now()}_${path.basename(file)}`;
     fileStream = fs.createReadStream(file);
-    contentType = mime.lookup(fileName) || 'application/octet-stream';
+    contentType = 'video/mp4';
   } else {
-    throw new Error("uploadFileToS3: Invalid file format");
-  }
-
-  const allowedExtensions = ['.mp4', '.mov'];
-  const ext = path.extname(fileName).toLowerCase();
-
-  if (!allowedExtensions.includes(ext)) {
-    throw new Error(`uploadFileToS3: Only .mp4 and .mov files are allowed`);
+    throw new Error('uploadFileToS3: Invalid file format');
   }
 
   const uploadParams = {
     Bucket: BUCKET_NAME,
-    Key: `uploads/${Date.now()}_${fileName}`,
+    Key: `uploads/${fileName}`,
     Body: fileStream,
     ContentType: contentType,
   };
@@ -56,9 +90,9 @@ const uploadFileToS3 = async (file) => {
   await s3.send(new PutObjectCommand(uploadParams));
 
   const fileUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${uploadParams.Key}`;
-
   return fileUrl;
 };
+
 
 const downloadFromS3 = async (s3Url, localPath) => {
   const urlParts = new URL(s3Url);
