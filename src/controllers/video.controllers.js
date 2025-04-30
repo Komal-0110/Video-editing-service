@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { createVideo, cutVideo, addSubtitlesToVideo } = require("../service/videoService");
+const { createVideo, cutVideo, addSubtitlesToVideo, renderFinalVideo } = require("../service/videoService");
 const { validate: isValidUUID } = require("uuid");
 
 async function uploadVideo(req, res) {
@@ -87,5 +87,15 @@ const addSubtitles = async (req, res) => {
   }
 };
 
+const renderVideo = async (req, res) => {
+  try {
+    const videoId = req.params.id;
+    const url = await renderFinalVideo(videoId);
+    res.status(200).json({ message: 'Rendered successfully', url });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
-module.exports = { uploadVideo, trimVideo, addSubtitles };
+
+module.exports = { uploadVideo, trimVideo, addSubtitles, renderVideo };
