@@ -32,3 +32,17 @@ enum VideoStatus {
   FAILED
 }
 
+model User {
+  id        Int      @id @default(autoincrement())
+  ext_id    String   @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+}
